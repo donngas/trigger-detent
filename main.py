@@ -1,19 +1,29 @@
+import os
+import configparser
+
 import pygame
 import pydirectinput
 
 pygame.init()
 
+# load config
+config = configparser.ConfigParser()
+config_file_path = os.path.join(os.path.dirname(__file__), 'config.ini')
 
-TRANSLATION = {
-    "left_trigger_1st": "num1",
-    "right_trigger_1st": "num2",
-    "left_trigger_2nd": "num4",
-    "right_trigger_2nd": "num5",
-}
+try:
+    config.read(config_file_path)
+except Exception as e:
+    print(f"Error reading config file: {e}")
 
 
-def output_translation(keybind):
-    pydirectinput.press(TRANSLATION[keybind])
+l1 = config.get("keybind", "l1")
+r1 = config.get("keybind", "r1")
+l2 = config.get("keybind", "l2")
+r2 = config.get("keybind", "r2")
+t1 = float(config.get("threshold", "t1"))
+t2 = float(config.get("threshold", "t2"))
+ltaxis = int(config.get("axis", "ltaxis"))
+rtaxis = int(config.get("axis", "rtaxis"))
 
 
 def main():
@@ -41,18 +51,22 @@ def main():
 
         for joystick in joysticks.values():
 
-            jid = joystick.get_instance_id()
-            left_trigger = joystick.get_axis(4)
-            right_trigger = joystick.get_axis(5)
+            try:
 
-            if left_trigger > -1.0 and left_trigger < 0.5:
-                output_translation("left_trigger_1st")
-            if right_trigger > -1.0 and right_trigger < 0.5:
-                output_translation("right_trigger_1st")
-            if left_trigger > 0.5:
-                output_translation("left_trigger_2nd")
-            if right_trigger > 0.5:
-                output_translation("right_trigger_2nd")
+                left_trigger = joystick.get_axis(ltaxis)
+                right_trigger = joystick.get_axis(rtaxis)
+
+                if left_trigger > t1 and left_trigger < t2:
+                    pydirectinput.press(l1)
+                if right_trigger > t1 and right_trigger < t2:
+                    pydirectinput.press(r1)
+                if left_trigger > t2:
+                    pydirectinput.press(l2)
+                if right_trigger > t2:
+                    pydirectinput.press(r2)
+
+            except:
+                continue
 
         clock.tick(30)
 
