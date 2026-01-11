@@ -1,2 +1,6 @@
 .*
 !.gitignore
+
+build/
+dist/
+TriggerDetent.spec
