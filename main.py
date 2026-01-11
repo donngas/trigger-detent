@@ -1,5 +1,6 @@
 import os
 import configparser
+import sys
 
 import pygame
 import pydirectinput
@@ -7,13 +8,28 @@ import pydirectinput
 pygame.init()
 
 # load config
-config = configparser.ConfigParser()
-config_file_path = os.path.join(os.path.dirname(__file__), 'config.ini')
+if getattr(sys, 'frozen', False):
+    # Running as a bundled executable (PyInstaller)
+    base_dir = os.path.dirname(sys.executable)
+else:
+    # Running as a normal script
+    base_dir = os.path.dirname(os.path.abspath(__file__))
 
+config_file_path = os.path.join(base_dir, 'config.ini')
+
+if not os.path.exists(config_file_path):
+    print(f"CRITICAL ERROR: config.ini not found at: {config_file_path}")
+    print("Please make sure config.ini is in the same folder as the executable.")
+    input("Press Enter to exit...")
+    sys.exit(1)
+
+config = configparser.ConfigParser()
 try:
-    config.read(config_file_path)
+    config.read(config_file_path, encoding='utf-8')
 except Exception as e:
     print(f"Error reading config file: {e}")
+    input("Press Enter to exit...")
+    sys.exit(1)
 
 
 l1 = config.get("keybind", "l1")
@@ -33,21 +49,23 @@ def main():
 
     # pygame will generate a pygame.JOYDEVICEADDED event for every joystick connected at the start of the program
     joysticks = {}
+    
+    print("Trigger Detent Started.")
+    print("Press Ctrl+C to quit.")
 
     while not done:
         for event in pygame.event.get():
 
             # Handle hotplugging
             if event.type == pygame.JOYDEVICEADDED:
-                # This event will be generated when the program starts for every
-                # joystick, filling up the list without needing to create them manually.
                 joy = pygame.joystick.Joystick(event.device_index)
                 joysticks[joy.get_instance_id()] = joy
-                print(f"Joystick {joy.get_instance_id()} connencted")
+                print(f"Joystick {joy.get_instance_id()} connected")
 
             if event.type == pygame.JOYDEVICEREMOVED:
-                del joysticks[event.instance_id]
-                print(f"Joystick {event.instance_id} disconnected")
+                if event.instance_id in joysticks:
+                    del joysticks[event.instance_id]
+                    print(f"Joystick {event.instance_id} disconnected")
 
         for joystick in joysticks.values():
 
