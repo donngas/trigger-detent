@@ -40,6 +40,9 @@ t1 = float(config.get("threshold", "t1"))
 t2 = float(config.get("threshold", "t2"))
 ltaxis = int(config.get("axis", "ltaxis"))
 rtaxis = int(config.get("axis", "rtaxis"))
+# Safely get ct_name, removing surrounding quotes if present
+raw_ct_name = config.get("calibration", "ct_name", fallback="none")
+ct_name = raw_ct_name.strip('"').strip("'")
 
 
 def main():
@@ -51,7 +54,10 @@ def main():
     joysticks = {}
     
     print("Trigger Detent Started.")
+    print(f"Target Controller: {ct_name}")
     print("Press Ctrl+C to quit.")
+
+    warned_multiple_no_filter = False
 
     while not done:
         for event in pygame.event.get():
@@ -60,17 +66,27 @@ def main():
             if event.type == pygame.JOYDEVICEADDED:
                 joy = pygame.joystick.Joystick(event.device_index)
                 joysticks[joy.get_instance_id()] = joy
-                print(f"Joystick {joy.get_instance_id()} connected")
+                print(f"Joystick connected: {joy.get_name()} (ID: {joy.get_instance_id()})")
 
             if event.type == pygame.JOYDEVICEREMOVED:
                 if event.instance_id in joysticks:
                     del joysticks[event.instance_id]
-                    print(f"Joystick {event.instance_id} disconnected")
+                    print(f"Joystick disconnected (ID: {event.instance_id})")
+
+        # Check for multiple controllers warning condition
+        if len(joysticks) > 1 and ct_name.lower() == "none" and not warned_multiple_no_filter:
+            print("\nWARNING: Multiple controllers detected but no specific controller filter is set.")
+            print("To ensure inputs are read from the correct device, please run Calibrate.exe.")
+            warned_multiple_no_filter = True # Warn once per session
 
         for joystick in joysticks.values():
+            
+            # Filter logic
+            if ct_name.lower() != "none":
+                if joystick.get_name() != ct_name:
+                    continue  # Skip checking inputs for this controller
 
             try:
-
                 left_trigger = joystick.get_axis(ltaxis)
                 right_trigger = joystick.get_axis(rtaxis)
 
