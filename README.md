@@ -17,6 +17,7 @@ This tool maps analog joystick triggers to different keyboard keys based on how 
 2. Clone this repository.
 3. Run `uv sync` to install dependencies.
 4. uv sync may fail due to the lack of provided binaries for pygame and pydirectinput for some environments. Troubleshooting may be required.
+5. To build executable, `uv run pyinstaller --noconfirm --onedir --clean --name [Calibrate/TriggerDetent] --add-data "config.ini;." [calibrate.py/main.py]`
 
 ## Usage
 
