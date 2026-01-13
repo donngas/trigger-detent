@@ -47,8 +47,3 @@ Edit `config.ini` to change specific settings if needed:
 ## Shout-out
 
 This tool was made for @ysw1601 to play AH-64D in DCS World.
-
-## To Do
-
-- Make virtual input be holding a key instead of input stream
-- Filter out the transitional 1st detent recognition on release of 2nd detent
