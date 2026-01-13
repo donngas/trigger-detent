@@ -48,3 +48,7 @@ Edit `config.ini` to change specific settings if needed:
 ## Shout-out
 
 This tool was made for @ysw1601 to play AH-64D in DCS World.
+
+## To Do
+
+- 1st detent is getting properly recognized as hold, but 2nd detent is recognized as single input by DCS. Fix needed.
