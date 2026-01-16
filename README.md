@@ -9,7 +9,7 @@ This tool maps analog joystick triggers to different keyboard keys based on how 
 1. Download the latest release `.zip` file.
 2. Extract the contents to a folder of your choice.
 3. Keep `TriggerDetent.exe`, `Calibrate.exe`, and `config.ini` in the same folder.
-4. DO NOT DELETE _internal/ folder.
+4. DO NOT DELETE \_internal/ folder.
 
 ### For Developers (Source Code)
 
@@ -51,4 +51,6 @@ This tool was made for @ysw1601 to play AH-64D in DCS World.
 
 ## To Do
 
-- 1st detent is getting properly recognized as hold, but 2nd detent is recognized as single input by DCS. Fix needed.
+- fix for key holding
+  - behavior 1: everything else fine, can't directly 2nd detent
+  - behavior 2: everything else fine, can't transition from 1st detent to 2nd detent
