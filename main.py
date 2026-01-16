@@ -6,6 +6,7 @@ import pygame
 import pydirectinput
 
 pygame.init()
+pydirectinput.PAUSE = 0.0
 
 # load config
 if getattr(sys, 'frozen', False):
@@ -36,6 +37,7 @@ l1 = config.get("keybind", "l1")
 r1 = config.get("keybind", "r1")
 l2 = config.get("keybind", "l2")
 r2 = config.get("keybind", "r2")
+key_change_behavior = int(config.get("keybind", "key_change_behavior", fallback="0"))
 t1 = float(config.get("threshold", "t1"))
 t2 = float(config.get("threshold", "t2"))
 ltaxis = int(config.get("axis", "ltaxis"))
@@ -171,6 +173,9 @@ def main():
         # Calculate which keys should be down this frame
         frame_desired_keys = set()
 
+        new_lt_zone = 0
+        new_rt_zone = 0
+
         for instance_id, joystick in joysticks.items():
             
             # Filter logic
@@ -192,38 +197,61 @@ def main():
                 # Update state
                 controller_states[instance_id] = {'lt': new_lt_zone, 'rt': new_rt_zone}
 
-                # Map zones to keys
-                # Zone 1 -> l1/r1
-                # Zone 2 -> l2/r2
-                # Note: original code prioritized Zone 2 over Zone 1? 
-                # Original logic:
-                # if > t1 and < t2: press l1
-                # if > t2: press l2
-                # It was exclusive.
-                
-                if new_lt_zone == 1:
-                    frame_desired_keys.add(l1)
-                elif new_lt_zone == 2:
-                    frame_desired_keys.add(l2)
-                
-                if new_rt_zone == 1:
-                    frame_desired_keys.add(r1)
-                elif new_rt_zone == 2:
-                    frame_desired_keys.add(r2)
-
             except Exception as e:
                 # print(f"Error reading joystick: {e}") # Optional debug
                 continue
 
-        # Diff against currently held keys
+        # --- STEP 1: KEY SELECTION ---
+        # Decide WHICH keys should be down based on the zones
+        
+        if key_change_behavior == 2:
+            # Mode 2: Cumulative (Hold 1st while in 2nd)
+            if new_lt_zone >= 1:
+                frame_desired_keys.add(l1)
+            if new_lt_zone == 2:
+                frame_desired_keys.add(l2)
+            
+            # Repeat for Right trigger
+            if new_rt_zone >= 1:
+                frame_desired_keys.add(r1)
+            if new_rt_zone == 2:
+                frame_desired_keys.add(r2)
+
+        else:
+            # Mode 0 & 1: Exclusive (Only one key at a time)
+            if new_lt_zone == 1:
+                frame_desired_keys.add(l1)
+            elif new_lt_zone == 2:
+                frame_desired_keys.add(l2)
+            
+            if new_rt_zone == 1:
+                frame_desired_keys.add(r1)
+            elif new_rt_zone == 2:
+                frame_desired_keys.add(r2)
+
+        # --- STEP 2: EXECUTION ORDER ---
+        # Decide WHEN to press/release the calculated keys
+
         keys_to_press = frame_desired_keys - current_keys_down
         keys_to_release = current_keys_down - frame_desired_keys
 
-        for k in keys_to_press:
-            pydirectinput.keyDown(k)
-        
-        for k in keys_to_release:
-            pydirectinput.keyUp(k)
+        if key_change_behavior == 1:
+            # Mode 1: Clean Handover (Release Old -> Press New)
+            # Creates a tiny gap where no keys are pressed.
+            for k in keys_to_release:
+                pydirectinput.keyUp(k)
+            for k in keys_to_press:
+                pydirectinput.keyDown(k)
+
+        else:
+            # Mode 0 & 2: Standard/Overlap (Press New -> Release Old)
+            # Ensures there is always input active (safer for most games).
+            # Note: For Mode 2, this order matters less since we rarely release 
+            # and press simultaneously, but this is the safe default.
+            for k in keys_to_press:
+                pydirectinput.keyDown(k)
+            for k in keys_to_release:
+                pydirectinput.keyUp(k)
 
         current_keys_down = frame_desired_keys
 
